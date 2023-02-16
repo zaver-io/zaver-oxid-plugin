@@ -1,0 +1,5 @@
+[{if $sPaymentID|strstr:"zv_"}]
+    [{include file="zaver_payment.tpl"}]
+    [{else}]
+    [{$smarty.block.parent}]
+    [{/if}]

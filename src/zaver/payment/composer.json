@@ -1,0 +1,26 @@
+{
+  "name": "zaver/zaver-oxid",
+  "description": "Zaver Payment Module for Oxid 6",
+  "type": "oxideshop-module",
+  "keywords": ["oxid", "modules", "eShop"],
+  "homepage": "https://www.zaver.io",
+  "version": "1.0.0",
+  "license": [
+    "OSL-3.0",
+    "AFL-3.0"
+  ],
+  "extra": {
+    "oxideshop": {
+      "target-directory": "zaver/payment"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Zaver\\SDK\\": "./lib/src/"
+    }
+  },
+  "require": {
+    "php": ">=7.4.0",
+    "zaver/sdk": "*"
+  }
+}
