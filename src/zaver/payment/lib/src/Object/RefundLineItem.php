@@ -13,7 +13,7 @@ use Zaver\SDK\Utils\DataObject;
  * @method float  getRefundUnitPrice()      The refunded amount per unit, including tax (e.g. VAT).
  * @method string getRefundDescription()    A brief description of the refunded line item.
  */
-class RefundLineIt```````em extends DataObject {
+class RefundLineItem extends DataObject {
 	
 	/**
 	 * Required. The id of the line item being refunded.
