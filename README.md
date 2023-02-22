@@ -55,7 +55,16 @@ Follow the below steps and run each command from the shop root directory:
  ```
  ./vendor/bin/oe-console oe:module:install source/modules/zaver/payment
   ```
-  
+### Uninstall the module
+```
+./vendor/bin/oe-console oe:module:uninstall-configuration zaver
+composer remove zaver/zaver-oxid
+composer remove zaver/sdk
+rm -rf source/modules/zaver
+rm tmp/smarty/*
+rm tmp/*
+```
+
 ### Finalizing Steps
  ##### 1. Go to "Extensions->Modules", select the "Zaver payments" extension and press the "Activate" Button in the "Overview" tab.
  ##### 2. There is a new menu item in the OXID-Interface named "Zaver". Here you can set your merchant connect data.
