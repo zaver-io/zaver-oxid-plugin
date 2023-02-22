@@ -24,26 +24,39 @@ Software requirements:
             }
           },
           
-          And run update command in project root directory:
+          And run the following command in project root directory:
           
           composer dump-autoload
           
-##### 6. Registered the guzzlehttp/guzzle library in module composer.json file by modifying it:
+##### 6. Register the guzzlehttp/guzzle library in module composer.json file by modifying it:
             "require": {
               "guzzlehttp/guzzle": "^7.0"
             },
           
-          And run update command in project root directory:
+or run on the command line:  
+
+          composer require guzzlehttp/guzzle:^7.0
+
+Then run the following command in the project root directory:
            
           composer update
           
-##### 7. In OXID versions from 6.2 on you must now import the module configuration. To do this, log in via SSH to the server on which the shop installation is located and navigate to the directory in which the source and vendor folders are located. Execute the following commands:
+##### 7. In OXID versions from 6.2 on you must now import the module configuration. 
          
          vendor/bin/oe-console oe:module:install-configuration source/modules/zaver/payment/
          vendor/bin/oe-console oe:module:apply-configuration
-         
+
+##### 8. Empty the tmp folder
+
+```
+rm source/tmp/smarty/*
+rm source/tmp/*
+```
+
 
 ### Option 2: Install via Composer 
+
+*__Note:__ This approach is currently unavailable in this plugin, but will be enabled in the next few days.*
 
 Follow the below steps and run each command from the shop root directory:
  ##### 1. Run the below command to install the payment module
@@ -56,17 +69,18 @@ Follow the below steps and run each command from the shop root directory:
  ./vendor/bin/oe-console oe:module:install source/modules/zaver/payment
   ```
 ### Uninstall the module
+Again from the command line in the shop's main directory:
 ```
 ./vendor/bin/oe-console oe:module:uninstall-configuration zaver
 composer remove zaver/zaver-oxid
 composer remove zaver/sdk
 rm -rf source/modules/zaver
-rm tmp/smarty/*
-rm tmp/*
+rm source/tmp/smarty/*
+rm source/tmp/*
 ```
 
 ### Finalizing Steps
- ##### 1. Go to "Extensions->Modules", select the "Zaver payments" extension and press the "Activate" Button in the "Overview" tab.
- ##### 2. There is a new menu item in the OXID-Interface named "Zaver". Here you can set your merchant connect data.
- ##### 3. Press the button "Syncronize payments" and your zaver payments are added to the Oxid payment methods.
- ##### 4. Go to the menu "Shop Settings->Shipping methods" and configure the zaver payments in the shipping methods.
+1. Go to "Extensions->Modules", select the "Zaver payments" extension and press the "Activate" Button in the "Overview" tab.
+2. There is a new menu item in the OXID-Interface named "Zaver". Here you can set your merchant connect data.
+3. Press the button "Syncronize payments" and your zaver payments are added to the Oxid payment methods.
+4. Go to the menu "Shop Settings->Shipping methods" and configure the zaver payments in the shipping methods.
