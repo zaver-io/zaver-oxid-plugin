@@ -23,7 +23,6 @@ class zaver_order extends zaver_order_parent
     $sActualPayment = $this->getPayment()->oxpayments__oxid->value;
     $oOrder = oxNew('oxorder');
     $sess_challenge = oxRegistry::getSession()->getVariable("sess_challenge");
-    error_log("PAYMENT: $sActualPayment, iSuccess:$iSuccess");
 
     if ($oOrder->load($sess_challenge)) {
       if (is_numeric($iSuccess) && $iSuccess >= 1) {
@@ -93,7 +92,6 @@ class zaver_order extends zaver_order_parent
 
           try {
             //Sends request to Zaver.
-            error_log("Sends request to Zaver...");
             $api = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
 
             $aBasketContents = $this->getBasket()->getContents();
@@ -119,7 +117,6 @@ class zaver_order extends zaver_order_parent
                 }
 
                 $iPriceTax = $iPrice - $iPriceNetto;
-                error_log("iPrice:$iPrice, iPriceNetto:$iPriceNetto, iPriceTax:$iPriceTax, iVatRate:$iVatRate");
 
                 $item = LineItem::create()
                   ->setName($sName)
@@ -209,8 +206,6 @@ class zaver_order extends zaver_order_parent
 
             $payment = $api->createPayment($request);
 
-            error_log("createPayment() - getPaymentStatus():" . $payment->getPaymentStatus());
-
             if ($payment->getPaymentStatus() == PaymentStatus::CREATED) {
               $strUrlRedirect = $payment->getPaymentLink();
               $paymentsData = $payment->getSpecificPaymentMethodData();
@@ -220,7 +215,6 @@ class zaver_order extends zaver_order_parent
               foreach ($paymentsData as $oPayment) {
                 if ($paymentSel == strtolower($oPayment["paymentMethod"])) {
                   $strUrlRedirect = $oPayment["paymentLink"];
-                  error_log("$paymentSel URL:$strUrlRedirect");
                 }
               }
 
@@ -228,7 +222,6 @@ class zaver_order extends zaver_order_parent
               $oOrder->addFieldName('zaver__payment_id');
               $oOrder->oxorder__zaver__payment_id = new oxField($paymentZvId, oxField::T_RAW);
               $oOrder->save();
-              error_log("PaymentStatus::CREATED - getPaymentId():$paymentZvId");
 
               oxRegistry::getUtils()->redirect($strUrlRedirect, false);
             }
@@ -241,7 +234,6 @@ class zaver_order extends zaver_order_parent
             }
           }
           catch (Exception $e) {
-            error_log("Exception:" . $e->getMessage());
             $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_ERROR);
             $oOrder->save();
             oxRegistry::getSession()->setVariable('_zaver_payment_error', $e->getMessage());
@@ -296,8 +288,6 @@ class zaver_order extends zaver_order_parent
    *
    */
   public function processZaverNotify() {
-    error_log("processZaverNotify() _GET:" . print_r($_GET, true));
-    error_log("processZaverNotify() _SERVER:" . print_r($_SERVER, true));
     if (empty($_GET['pm'])) {
       header('HTTP/1.1 400 Bad Request');
       echo "param pm not found.";
@@ -323,12 +313,9 @@ class zaver_order extends zaver_order_parent
       $strOrderStatus = $oOrder->oxorder__oxtransstatus;
       $api = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
       $strCallBkToken = ZaverConfig::getCallbackToken();
-      error_log("processZaverNotify() strCallBkToken:$strCallBkToken");
       $payment = $api->receiveCallback($strCallBkToken);
 
       $strPaymentStatus = $payment->getPaymentStatus();
-      error_log("processZaverNotify() payment->getPaymentStatus():$strPaymentStatus");
-      error_log("processZaverNotify() oxorder__oxtransstatus:$strOrderStatus");
       $bIsOrderOk = false;
 
       if ($oOrder->oxorder__zaver__status != "" && $strOrderStatus != ZaverConfig::ORDER_IN_PAYMENT) {
@@ -340,7 +327,6 @@ class zaver_order extends zaver_order_parent
         }
         else {
           if ($strPaymentStatus == PaymentStatus::SETTLED) {
-            error_log("processZaverNotify() payment status SETTLED");
             $oOrder->oxorder__oxremark = new oxField('The payment was SETTLED', oxField::T_RAW);
             $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_OK);
             $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
@@ -356,7 +342,6 @@ class zaver_order extends zaver_order_parent
             $oRemark->save();*/
           }
           elseif ($strPaymentStatus == PaymentStatus::CANCELLED) {
-            error_log("processZaverNotify() payment status CANCELLED");
             $oOrder->oxorder__oxremark = new oxField('The payment was CANCELLED', oxField::T_RAW);
             $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
             $oOrder->save();
@@ -404,8 +389,6 @@ class zaver_order extends zaver_order_parent
    *
    */
   public function processZaverRedirect() {
-    error_log("processZaverRedirect() _GET:" . print_r($_GET, true));
-
     $pm = $_GET['pm'];
 
     if (empty($_GET['pm'])) {
@@ -424,15 +407,9 @@ class zaver_order extends zaver_order_parent
     try {
       $api = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
       $zvPaymentId = $oOrder->oxorder__zaver__payment_id->value;
-      error_log("processZaverRedirect() oxorder__zaver__status:" . $oOrder->oxorder__zaver__status->value);
-      error_log("processZaverRedirect() oxorder__oxtransstatus:" . $oOrder->oxorder__oxtransstatus->value);
-      error_log("processZaverRedirect() oxorder__zaver__payment_status:" . $oOrder->oxorder__zaver__payment_status->value);
-      error_log("processZaverRedirect() oxorder__zaver__payment_id:$zvPaymentId");
 
       $zvStatusPmRes = $api->getPaymentStatus($zvPaymentId);
       $zvStatusPm = $zvStatusPmRes->getPaymentStatus();
-
-      error_log("processZaverRedirect() getPaymentStatus():$zvStatusPm");
 
       if ($oOrder->oxorder__zaver__status != "" &&
         $oOrder->oxorder__oxtransstatus != ZaverConfig::ORDER_IN_PAYMENT
@@ -495,7 +472,6 @@ class zaver_order extends zaver_order_parent
         $strResult = "OK";
         $sErrorMsg = "";
       }
-      error_log("processZaverRedirect() strResult:$strResult, sErrorMsg:$sErrorMsg");
       switch ($strResult) {
         case "ERROR":
           oxRegistry::getSession()->setVariable(

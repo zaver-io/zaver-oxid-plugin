@@ -12,8 +12,6 @@ class zaver_orderoverview extends zaver_orderoverview_parent
    * Sends order.
    */
   public function sendorder() {
-    error_log("sendorder()");
-
     $result = $this->captureZaverPayment();
 
     if ($result) {
@@ -51,16 +49,11 @@ class zaver_orderoverview extends zaver_orderoverview_parent
       // load object
       $this->_oOrder->load($sOxid);
     }
-    error_log("captureZaverPayment() ZaverConfig::getAutomaticCapture():".ZaverConfig::getAutomaticCapture());
 
     if ($this->isZaverOrder()) {
       try {
         if (ZaverConfig::getAutomaticCapture()) {
           $paymentId = $this->_oOrder->oxorder__zaver__payment_id->value;
-          error_log("captureZaverPayment() paymentId:$paymentId");
-          error_log("captureZaverPayment() oxorder__oxtotalordersum:".$this->_oOrder->oxorder__oxtotalordersum->value);
-          error_log("captureZaverPayment() oxorder__oxcurrency:".$this->_oOrder->oxorder__oxcurrency->value);
-
           $dAmount = number_format($this->_oOrder->oxorder__oxtotalordersum->value, 2, '.', '');
           $oPaymentCapReq = PaymentCaptureRequest::create()
             ->setCurrency($this->_oOrder->oxorder__oxcurrency->value)
@@ -68,7 +61,6 @@ class zaver_orderoverview extends zaver_orderoverview_parent
           $oCheckout = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
           $zvStatusPmRes = $oCheckout->getPaymentStatus($paymentId);
           $zvStatusPm = $zvStatusPmRes->getPaymentStatus();
-          error_log("captureZaverPayment() getPaymentStatus():$zvStatusPm");
 
           if ($zvStatusPm != PaymentStatus::SETTLED && $zvStatusPm != PaymentStatus::CANCELLED) {
             $oCheckout->capturePayment($paymentId, $oPaymentCapReq);

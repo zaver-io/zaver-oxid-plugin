@@ -12,8 +12,6 @@ class zaver_orderlist extends zaver_orderlist_parent
    */
   public function storno()
   {
-    error_log("storno()");
-
     $result = $this->cancelZaverOrder();
 
     if ($result) {
@@ -26,7 +24,6 @@ class zaver_orderlist extends zaver_orderlist_parent
    */
   public function deleteEntry()
   {
-    error_log("deleteEntry()");
     $result = $this->cancelZaverOrder();
 
     if ($result) {
@@ -68,7 +65,6 @@ class zaver_orderlist extends zaver_orderlist_parent
 
     if ($this->isZaverOrder()) {
       $paymentId = $this->_oOrder->oxorder__zaver__payment_id->value;
-      error_log("cancelZaverOrder() paymentId:$paymentId");
 
       try {
         $oPaymentUpReq = PaymentUpdateRequest::create()
@@ -77,18 +73,15 @@ class zaver_orderlist extends zaver_orderlist_parent
         $oCheckout = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
         $zvStatusPmRes = $oCheckout->getPaymentStatus($paymentId);
         $zvStatusPm = $zvStatusPmRes->getPaymentStatus();
-        error_log("captureZaverPayment() getPaymentStatus():$zvStatusPm");
 
         if ($zvStatusPm != PaymentStatus::SETTLED && $zvStatusPm != PaymentStatus::CANCELLED) {
           $oPaymentUpRes = $oCheckout->updatePayment($paymentId, $oPaymentUpReq);
-          error_log("oPaymentUpRes:" . print_r($oPaymentUpRes, true));
         }
       } catch (Exception $e) {
         //oxRegistry::get('oxUtilsServer')->addErrorToDisplay($e);
         $_POST['oxid'] = -1;
         $this->resetContentCache();
         $this->init();
-        error_log("ERROR:".$e->getMessage());
         return false;
       }
     }

@@ -46,7 +46,6 @@ class zaver_config extends Shop_Config
       $this->_parameters = $oxConfig->getRequestParameter(ZaverConfig::VAR_CONFIG);
     }
     $oxConfig->saveShopConfVar('arr', ZaverConfig::VAR_CONFIG, $this->_parameters);
-    error_log("zaver_config.php save()");
   }
 
   /**
@@ -55,8 +54,6 @@ class zaver_config extends Shop_Config
    * @return void
    */
   public function synchronize() {
-    error_log("zaver_config.php synchronize()");
-
     try {
       $oCheckout = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
       $oPaymentReq = PaymentMethodsRequest::create();

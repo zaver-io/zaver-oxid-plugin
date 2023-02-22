@@ -218,7 +218,6 @@ class ZaverApi extends oxBase
    */
   public function getPayments($market = '', $amount = '', $currency = '')
   {
-    error_log("----INIT getPayments()");
     $aRes = array();
     $aPayments = array();
 
@@ -244,8 +243,6 @@ class ZaverApi extends oxBase
     }
     $aRes['headerStatus'] = $aRequest['headerStatus'];
     $aRes['aPayments'] = $aPayments;
-
-    error_log("----END getPayments()");
 
     return $aRes;
   }

@@ -53,7 +53,6 @@ class zaver_payment extends zaver_payment_parent
     $paymentId = oxRegistry::getConfig()->getRequestParameter('paymentid');
     $parentResult = parent::validatePayment();
     $result['msg'] = '';
-    error_log("validatePayment($paymentId)");
 
     if (substr($paymentId, 0, 3) === ZaverConfig::PLUGIN_PREFIX) {
       if (ZaverConfig::getHostUrl() == '' ||
@@ -147,9 +146,6 @@ class zaver_payment extends zaver_payment_parent
         $settingsAreSet = false;
       }
     }
-
-    error_log("isSettingsSet(), paymentId:$paymentId, settingsAreSet:$settingsAreSet");
-    error_log("lang:$lang, dAmount:$dAmount, currency:" . $sCur);
 
     return $settingsAreSet;
   }
