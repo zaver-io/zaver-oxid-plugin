@@ -34,4 +34,5 @@ $aLang = array(
   'ZAVER_ONLY_FOR_ZAVER_PAYMENT' => 'Dieser Reiter betrifft nur mit Zaver bezahlte Bestellungen',
   'ZAVER_AUTOMATIC_CAPTURE' => 'Automatischer Capture bei Lieferung',
   'ZAVER_AUTOMATIC_CAPTURE_DESCRIPTION' => 'Bucht automatisch die Zahlung, sobald der Bestellstatus auf geliefert gestellt wird.',
+  'ZAVER_PAYMENTID_TXT' => 'Zaver Payment-ID',
 );

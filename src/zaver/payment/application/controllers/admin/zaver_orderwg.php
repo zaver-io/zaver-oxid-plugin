@@ -43,18 +43,23 @@ class zaver_orderwg extends zaver_admindetails
       $this->_aViewData["sMessage"] = oxRegistry::getLang()->translateString("ZAVER_ONLY_FOR_ZAVER_PAYMENT");
     }
     else {
-      $this->_aViewData["Widget"] = '';
-      $lang = strtoupper(oxRegistry::getLang()->getLanguageAbbr());
-      $oOrder = $this->_oOrder;
+      try {
+        $this->_aViewData["Widget"] = '';
+        $lang = strtoupper(oxRegistry::getLang()->getLanguageAbbr());
+        $oOrder = $this->_oOrder;
 
-      $oWidget = WidgetRequest::create()
-        ->setClientIp($this->getRemoteAddress())
-        ->setLanguage($lang)
-        ->setPaymentId($oOrder->oxorder__zaver__payment_id->value);
+        $oWidget = WidgetRequest::create()
+          ->setClientIp($this->getRemoteAddress())
+          ->setLanguage($lang)
+          ->setPaymentId($oOrder->oxorder__zaver__payment_id->value);
 
-      $oManage = new Manage(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
-      $oWidgetRes = $oManage->getWidget($oWidget);
-      $this->_aViewData["Widget"] = $oWidgetRes->getWidgetUrl();
+        $oManage = new Manage(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
+        $oWidgetRes = $oManage->getWidget($oWidget);
+        $this->_aViewData["Widget"] = $oWidgetRes->getWidgetUrl();
+      }
+      catch (Exception $e) {
+        error_log("ERROR:" . $e->getMessage());
+      }
     }
 
     return $this->_sThisTemplate;

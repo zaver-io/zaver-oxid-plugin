@@ -16,6 +16,8 @@ class zaver_orderlist extends zaver_orderlist_parent
 
     if ($result) {
       parent::storno();
+      $this->_oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_CANCELED);
+      $this->_oOrder->save();
     }
   }
 

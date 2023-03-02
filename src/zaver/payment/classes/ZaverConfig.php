@@ -26,6 +26,7 @@ class ZaverConfig extends oxSuperCfg
   const ORDER_NOT_FINISHED = 'NOT_FINISHED';
   const ORDER_IN_PAYMENT = 'IN_PAYMENT';
   const ORDER_IN_PROCESS = 'IN_PROCESS';
+  const ORDER_CANCELED = 'CANCELED';
 
 
   /** @var oxConfig */

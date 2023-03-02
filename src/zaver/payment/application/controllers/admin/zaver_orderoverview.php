@@ -79,4 +79,32 @@ class zaver_orderoverview extends zaver_orderoverview_parent
 
     return true;
   }
+
+  /**
+   * Returns name of template to render
+   *
+   * @return string
+   */
+  public function render()
+  {
+    $sTemplate = parent::render();
+    $this->_aViewData['isZaverOrder'] = false;
+
+    $this->_oOrder = oxNew("oxorder");
+    $oConfig = $this->getConfig();
+    $sOxid = $oConfig->getRequestParameter("oxid");
+
+    if ($sOxid != "-1" && isset($sOxid)) {
+      // load object
+      $this->_oOrder->load($sOxid);
+    }
+
+    if ($this->isZaverOrder()) {
+      $this->_aViewData['isZaverOrder'] = true;
+      $this->_aViewData['zaverPaymentId'] = $this->_oOrder->oxorder__zaver__payment_id->value;
+    }
+
+    return $sTemplate;
+  }
+
 }

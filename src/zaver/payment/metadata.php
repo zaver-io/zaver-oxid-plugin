@@ -20,7 +20,7 @@ $aModule = array(
     'en' => 'Module to integrate all payment methods from Zaver payments.<br>
              Please continue with the configuration of the payment methods for Zaver in the special “Zaver” menu item.”'
   ],
-  'version' => '1.0.0',
+  'version' => '1.0.1',
   'thumbnail' => 'out/img/Logo.png',
   'author' => 'Zaver payments',
   'email' => 'integration@zaver.se',
@@ -69,6 +69,10 @@ $aModule = array(
       'block' => 'checkout_order_main',
       'file' => 'application/views/mobile/blocks/page/checkout/payment/checkout_order_main.tpl'
     ),
+    array('template' => 'order_overview.tpl',
+      'block' => 'admin_order_overview_checkout',
+      'file' => 'application/views/admin/blocks/zaver_orderoverview.tpl'
+    ),
   ),
   'templates' => array(
     'zaver_payment.tpl' => 'zaver/payment/application/views/azure/tpl/page/checkout/inc/zaver_payment.tpl',
@@ -78,9 +82,9 @@ $aModule = array(
   ),
   'settings' => [
     [
-        'name' => 'Zaver Oxid',
-        'type' => 'str',
-        'value' => 'Please configure via the separate Zaver menu item'
+      'name' => 'Zaver Oxid',
+      'type' => 'str',
+      'value' => 'Please configure via the separate Zaver menu item'
     ]
   ],
   'events' => array(
