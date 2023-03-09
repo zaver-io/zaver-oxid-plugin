@@ -1,12 +1,20 @@
 <?php
+namespace Zaver\Payment\Core;
+
 use Zaver\SDK\Object\PaymentMethodsRequest;
 use Zaver\SDK\Checkout;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Application\Model\Payment;
+use OxidEsales\Eshop\Core\Module\Module;
+use OxidEsales\Eshop\Core\DatabaseProvider;
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\DbMetaDataHandler;
 
 /**
  * This class is used to install the zaver module
  *
  */
-class zaver_setup extends oxAdminView
+class Setup
 {
 
   private $oxPayment;
@@ -14,7 +22,7 @@ class zaver_setup extends oxAdminView
   private $methodsList = array();
 
   public function __construct() {
-    $this->oxPayment = oxNew("oxpayment");
+    $this->oxPayment = oxNew(Payment::class);
 
     try {
       if (!empty(ZaverConfig::getApiKey())) {
@@ -34,13 +42,14 @@ class zaver_setup extends oxAdminView
    */
   public function zaver__install() {
 
-    $modul = oxNew('oxModule');
+    $modul = oxNew(Module::class);
     $modul->load('zaver');
 
     $this->deleteOldConfigVariables();
+    $oDb = DatabaseProvider::getDb();
 
     if (!$this->isTablesInstalled()) {
-      oxDb::getDb()->Execute("CREATE TABLE IF NOT EXISTS `zaver_order_number_reservations` (" .
+      $oDb->execute("CREATE TABLE IF NOT EXISTS `zaver_order_number_reservations` (" .
         "`OXID` CHAR( 32 ) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL ," .
         " UNIQUE (`OXID`)" .
         " ) ENGINE = MYISAM ;");
@@ -62,7 +71,7 @@ class zaver_setup extends oxAdminView
 
   protected function updateZaverPaymentNames() {
 
-    $db = oxDb::getDb();
+    $oDb = DatabaseProvider::getDb();
     $pluginCodeTxt = ZaverConfig::PLUGIN_CODE_TXT;
 
     foreach ($this->methodsList as $pm) {
@@ -72,39 +81,39 @@ class zaver_setup extends oxAdminView
       $name_en = $aLocalization["en-EN"]["title"];
       $name = ZaverConfig::PLUGIN_PREFIX . $pm["paymentMethod"];
 
-      $update = "UPDATE oxpayments SET OXDESC = " . $db->quote($pluginCodeTxt . $name_de) . ", OXDESC_1 = " . $db->quote($pluginCodeTxt . $name_en) . " WHERE OXID = " . $db->quote($name);
-      $db->Execute($update);
+      $update = "UPDATE oxpayments SET OXDESC = " . $oDb->quote($pluginCodeTxt . $name_de) . ", OXDESC_1 = " . $oDb->quote($pluginCodeTxt . $name_en) . " WHERE OXID = " . $oDb->quote($name);
+      $oDb->execute($update);
     }
   }
 
   protected function deleteOldConfigVariables() {
 
-    $shopConfig = oxRegistry::getConfig();
+    $shopConfig = Registry::getConfig();
     $sShopId = $shopConfig->getBaseShopId();
 
-    $oDb = oxDb::getDb();
+    $oDb = DatabaseProvider::getDb();
 
     //Delete existent settings
     $sSql = "DELETE FROM `oxconfig` WHERE `oxshopid`  = " . $oDb->quote($sShopId) . " AND `oxmodule` = " . $oDb->quote('module:zaver') . " ";
-    $oDb->Execute($sSql);
+    $oDb->execute($sSql);
 
     //Delete existent settings
     $sSql = "DELETE FROM `oxconfigdisplay` WHERE `oxcfgmodule` = " . $oDb->quote('module:zaver') . " ";
 
-    $oDb->Execute($sSql);
+    $oDb->execute($sSql);
   }
 
   //Checks if tables created.
   protected function isTablesInstalled() {
 
-    $zaver_order_number_reservations = oxDb::getDb(oxDB::FETCH_MODE_ASSOC)->getOne('CHECK TABLE `zaver_order_number_reservations`');
+    $zaver_order_number_reservations = DatabaseProvider::getDb(DatabaseProvider::FETCH_MODE_ASSOC)->getOne('CHECK TABLE `zaver_order_number_reservations`');
     return $zaver_order_number_reservations['Msg_text'] === "OK";
   }
 
 
   //Insert rows of payment methods are created in oxPayments table
   protected function installPayments($p_aPaymentNotInstalled) {
-    $db = oxDb::getDb();
+    $oDb = DatabaseProvider::getDb();
     $pluginCodeTxt = ZaverConfig::PLUGIN_CODE_TXT;
 
     foreach ($this->methodsList as $pm) {
@@ -122,9 +131,9 @@ class zaver_setup extends oxAdminView
         $insert = "INSERT INTO oxpayments (OXID, OXACTIVE, OXDESC, OXADDSUM, OXADDSUMTYPE, OXADDSUMRULES, OXFROMBONI, OXFROMAMOUNT, " .
           "OXTOAMOUNT, OXVALDESC, OXCHECKED, OXDESC_1, OXVALDESC_1, OXDESC_2, OXVALDESC_2, OXDESC_3, OXVALDESC_3, OXLONGDESC, " .
           "OXLONGDESC_1, OXLONGDESC_2, OXLONGDESC_3, OXSORT) VALUES(" .
-          $db->quote($name) . ", 1, " . $db->quote($pluginCodeTxt . $name_de) . ", 0, 'abs', 15, 0, 0, 1000000, '', 0, " .
-          $db->quote($pluginCodeTxt . $name_en) . ", '', '', '', '', '', '$desc_de', '$desc_en', '', '', 0)";
-        $db->Execute($insert);
+          $oDb->quote($name) . ", 1, " . $oDb->quote($pluginCodeTxt . $name_de) . ", 0, 'abs', 15, 0, 0, 1000000, '', 0, " .
+          $oDb->quote($pluginCodeTxt . $name_en) . ", '', '', '', '', '', '$desc_de', '$desc_en', '', '', 0)";
+        $oDb->execute($insert);
       }
     }
   }
@@ -162,13 +171,14 @@ class zaver_setup extends oxAdminView
    * @return bool
    */
   protected function queryForBlock($oxBlockname) {
-    $shopId = $this->getConfig()->getShopId();
-    $db = oxDb::getDb();
-    $result = $db->getOne(
+    $config = Registry::getConfig();
+    $shopId = $config->getShopId();
+    $oDb = DatabaseProvider::getDb();
+    $result = $oDb->getOne(
       "SELECT 1 FROM oxtplblocks"
       . " WHERE oxmodule = '" . ZaverConfig::PLUGIN_CODE . "'"
-      . " AND oxshopid = " . $db->quote($shopId)
-      . " AND oxid = " . $db->quote($oxBlockname)
+      . " AND oxshopid = " . $oDb->quote($shopId)
+      . " AND oxid = " . $oDb->quote($oxBlockname)
       . " LIMIT 1"
     );
 
@@ -200,24 +210,25 @@ class zaver_setup extends oxAdminView
    * @param  string $oxFile
    */
   protected function insertBlock($oxId, $oxBlockname, $oxTemplate, $oxFile) {
-    $db = oxDb::getDb();
-    $shopId = $this->getConfig()->getShopId();
+    $oDb = DatabaseProvider::getDb();
+    $config = Registry::getConfig();
+    $shopId = $config->getShopId();
     $sql = "INSERT INTO `oxtplblocks` (
                     `OXID`, `OXACTIVE`, `OXSHOPID`, `OXTEMPLATE`,
                     `OXBLOCKNAME`, `OXPOS`, `OXFILE`, `OXMODULE`
                 ) VALUES (
-                    " . $db->quote($oxId) . ",
+                    " . $oDb->quote($oxId) . ",
                     1,
-                    " . $db->quote($shopId) . ",
-                    " . $db->quote($oxTemplate) . ",
-                    " . $db->quote($oxBlockname) . ",
+                    " . $oDb->quote($shopId) . ",
+                    " . $oDb->quote($oxTemplate) . ",
+                    " . $oDb->quote($oxBlockname) . ",
                     '1',
-                    " . $db->quote($oxFile) . ", '" . ZaverConfig::PLUGIN_CODE . "'
+                    " . $oDb->quote($oxFile) . ", '" . ZaverConfig::PLUGIN_CODE . "'
                 )
         ";
 
     // @TODO add exception handling
-    $db->execute($sql);
+    $oDb->execute($sql);
   }
 
   function addZaverStatusColumnInOrderTable() {
@@ -226,12 +237,12 @@ class zaver_setup extends oxAdminView
 
     $sTable = 'oxorder';
     $sColumn = 'zaver__status';
-    $oDbHandler = oxnew('oxDbMetaDataHandler');
+    $oDbHandler = oxNew(DbMetaDataHandler::class);
     $bColumExist = $oDbHandler->fieldExists($sColumn, $sTable);
 
     if ($bColumExist == false || $bColumExist == null || $bColumExist == 0) {
       $sql = "ALTER TABLE `oxorder` ADD `zaver__status` smallint NULL";
-      oxDb::getDb()->Execute($sql);
+      DatabaseProvider::getDb()->execute($sql);
 
       $oDbHandler->updateViews();
     }
@@ -243,11 +254,11 @@ class zaver_setup extends oxAdminView
 
     $sTable = 'oxorder';
     $sColumn = 'zaver__transaction_id';
-    $oDbHandler = oxnew('oxDbMetaDataHandler');
+    $oDbHandler = oxNew(DbMetaDataHandler::class);
     $bColumExist = $oDbHandler->fieldExists($sColumn, $sTable);
     if ($bColumExist == false || $bColumExist == null || $bColumExist == 0) {
       $sql = "ALTER TABLE `oxorder` ADD `zaver__transaction_id` varchar(32) NULL";
-      oxDb::getDb()->Execute($sql);
+      DatabaseProvider::getDb()->execute($sql);
 
       $oDbHandler->updateViews();
     }
@@ -259,12 +270,12 @@ class zaver_setup extends oxAdminView
 
     $sTable = 'oxorder';
     $sColumn = 'zaver__payment_id';
-    $oDbHandler = oxnew('oxDbMetaDataHandler');
+    $oDbHandler = oxNew(DbMetaDataHandler::class);
     $bColumExist = $oDbHandler->fieldExists($sColumn, $sTable);
 
     if ($bColumExist == false || $bColumExist == null || $bColumExist == 0) {
       $sql = "ALTER TABLE `oxorder` ADD `zaver__payment_id` varchar(100) NULL";
-      oxDb::getDb()->Execute($sql);
+      DatabaseProvider::getDb()->execute($sql);
 
       $oDbHandler->updateViews();
     }
@@ -276,12 +287,12 @@ class zaver_setup extends oxAdminView
 
     $sTable = 'oxorder';
     $sColumn = 'zaver__payment_status';
-    $oDbHandler = oxnew('oxDbMetaDataHandler');
+    $oDbHandler = oxNew(DbMetaDataHandler::class);
     $bColumExist = $oDbHandler->fieldExists($sColumn, $sTable);
 
     if ($bColumExist == false || $bColumExist == null || $bColumExist == 0) {
       $sql = "ALTER TABLE `oxorder` ADD `zaver__payment_status` varchar(50) NULL";
-      oxDb::getDb()->Execute($sql);
+      DatabaseProvider::getDb()->execute($sql);
 
       $oDbHandler->updateViews();
     }

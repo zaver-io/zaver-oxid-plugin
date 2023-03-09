@@ -10,6 +10,7 @@ Zaver payment module is available for the Oxid eshop versions 6.2.x - 6.5.0 in t
 Software requirements:
 - installed Oxid eShop >= v6.2.x
 - installed guzzlehttp/guzzle >=7.0 (composer require guzzlehttp/guzzle)
+- installed composer 2.2.5 
 
  ##### 1. Download a version from GitHub. 
  Please use the attached ZIP files (zaver-oxid-X.Y.Z.zip) from the list of available releases: GitHub Releases.
@@ -56,14 +57,17 @@ rm source/tmp/*
 
 ### Option 2: Install via Composer 
 
-*__Note:__ This approach is currently unavailable in this plugin, but will be enabled in the next few days.*
-
 Follow the below steps and run each command from the shop root directory:
  ##### 1. Run the below command to install the payment module
+ From zip file, copy the zip file 'zaver_module-zaver-oxid-1.0.2.zip' to the shop root directory.
  ```
  composer config repositories.gclocal artifact ./
- composer require zaver/zaver-oxid:1.0.0
+ composer require zaver/zaver-oxid:1.0.2
  ```
+ From git repository.
+ ```
+  composer require zaver/zaver-oxid:1.0.2
+  ```
  ##### 2. Run the below command to register the payment module from the version above 6.2 oxid eshop
  ```
  ./vendor/bin/oe-console oe:module:install source/modules/zaver/payment

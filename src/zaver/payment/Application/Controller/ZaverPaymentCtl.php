@@ -1,11 +1,16 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller;
+
 use Zaver\SDK\Object\PaymentMethodsRequest;
 use Zaver\SDK\Checkout;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Core\Registry;
 
 /**
- * Class zaver_payment
+ * Class ZaverPaymentCtl
  */
-class zaver_payment extends zaver_payment_parent
+class ZaverPaymentCtl extends ZaverPaymentCtl_parent
 {
 
   public $_zaver_payment_error;
@@ -19,9 +24,9 @@ class zaver_payment extends zaver_payment_parent
    *
    */
   public function getZaverPaymentError() {
-    if (oxRegistry::getSession()->hasVariable('_zaver_payment_error')) {
-      $this->_zaver_payment_error = oxRegistry::getSession()->getVariable('_zaver_payment_error');
-      oxRegistry::getSession()->deleteVariable('_zaver_payment_error');
+    if (Registry::getSession()->hasVariable('_zaver_payment_error')) {
+      $this->_zaver_payment_error = Registry::getSession()->getVariable('_zaver_payment_error');
+      Registry::getSession()->deleteVariable('_zaver_payment_error');
     }
 
     return $this->_zaver_payment_error;
@@ -36,7 +41,7 @@ class zaver_payment extends zaver_payment_parent
   public function isZaverPaymentError() {
     $bIsError = false;
 
-    if (!empty($this->_zaver_payment_error) || oxRegistry::getSession()->hasVariable('_zaver_payment_error')) {
+    if (!empty($this->_zaver_payment_error) || Registry::getSession()->hasVariable('_zaver_payment_error')) {
       $bIsError = true;
     }
 
@@ -50,7 +55,7 @@ class zaver_payment extends zaver_payment_parent
    *
    */
   public function validatePayment() {
-    $paymentId = oxRegistry::getConfig()->getRequestParameter('paymentid');
+    $paymentId = Registry::getConfig()->getRequestParameter('paymentid');
     $parentResult = parent::validatePayment();
     $result['msg'] = '';
 
@@ -58,7 +63,7 @@ class zaver_payment extends zaver_payment_parent
       if (ZaverConfig::getHostUrl() == '' ||
         ZaverConfig::getApiKey() == ''
       ) {
-        $result['msg'] = oxRegistry::getLang()->translateString("ZV_PAYMENT_SETTINGS_EMPTY");
+        $result['msg'] = Registry::getLang()->translateString("ZV_PAYMENT_SETTINGS_EMPTY");
       }
     }
 
@@ -100,9 +105,9 @@ class zaver_payment extends zaver_payment_parent
     $bisPayment = false;
 
     // Get the current language
-    $lang = strtoupper(oxRegistry::getLang()->getLanguageAbbr());
+    $lang = strtoupper(Registry::getLang()->getLanguageAbbr());
 
-    $oBasket = oxRegistry::getSession()->getBasket();
+    $oBasket = Registry::getSession()->getBasket();
 
     // Get the amount
     $dAmount = $oBasket->getPrice()->getBruttoPrice();

@@ -1,4 +1,5 @@
 <?php
+namespace Zaver\Payment\Classes;
 
 class ZaverLogger
 {

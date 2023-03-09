@@ -1,9 +1,15 @@
 <?php
 
+namespace Zaver\Payment\Application\Model;
+
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\Exception\NoArticleException;
+use OxidEsales\Eshop\Core\Exception\ArticleInputException;
+
 /**
- * Class zaver_oxbasket
+ * Class ZaverBasket
  */
-class zaver_oxbasket extends zaver_oxbasket_parent
+class ZaverBasket extends ZaverBasket_parent
 {
   /**
    * Returns array of basket oxarticle objects
@@ -16,8 +22,8 @@ class zaver_oxbasket extends zaver_oxbasket_parent
       /** @var oxBasketItem $oBasketItem */
       try {
         /* Add check for session-parameter, disabled artickel-stock check START */
-        if (oxRegistry::getSession()->hasVariable('zaver_disable_article_check')
-          && oxRegistry::getSession()->getVariable('zaver_disable_article_check') == '1'
+        if (Registry::getSession()->hasVariable('zaver_disable_article_check')
+          && Registry::getSession()->getVariable('zaver_disable_article_check') == '1'
         ) {
           $oProduct = $oBasketItem->getArticle(false);
         }
@@ -38,14 +44,14 @@ class zaver_oxbasket extends zaver_oxbasket_parent
           }
         }
       }
-      catch (oxNoArticleException $oEx) {
-        oxRegistry::get("oxUtilsView")->addErrorToDisplay($oEx);
+      catch (NoArticleException $oEx) {
+        Registry::getUtilsView()->addErrorToDisplay($oEx);
         $this->removeItem($sItemKey);
         $this->calculateBasket(true);
         continue;
       }
-      catch (oxArticleInputException $oEx) {
-        oxRegistry::get("oxUtilsView")->addErrorToDisplay($oEx);
+      catch (ArticleInputException $oEx) {
+        Registry::getUtilsView()->addErrorToDisplay($oEx);
         $this->removeItem($sItemKey);
         $this->calculateBasket(true);
         continue;

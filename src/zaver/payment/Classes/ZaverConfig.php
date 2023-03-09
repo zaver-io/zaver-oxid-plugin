@@ -1,6 +1,9 @@
 <?php
+namespace Zaver\Payment\Classes;
 
-class ZaverConfig extends oxSuperCfg
+use OxidEsales\Eshop\Core\Registry;
+
+class ZaverConfig
 {
   const LOG_FILENAME = 'zaver.log';
 
@@ -72,13 +75,13 @@ class ZaverConfig extends oxSuperCfg
    * @return array
    */
   public static function getMethodsList() {
-      return static::$methods;
+    return static::$methods;
   }
 
   private static function loadConfig()
   {
     if (!static::$config) {
-      static::$config = oxRegistry::getConfig();
+      static::$config = Registry::getConfig();
     }
   }
 

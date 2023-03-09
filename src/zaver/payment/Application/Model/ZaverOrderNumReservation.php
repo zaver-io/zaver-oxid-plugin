@@ -1,9 +1,14 @@
 <?php
 
+namespace Zaver\Payment\Application\Model;
+
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\Base;
+
 /**
  * Class zaver_order_number_reservation
  */
-class zaver_order_number_reservation extends oxBase
+class ZaverOrderNumReservation extends Base
 {
 
   /**
@@ -26,8 +31,8 @@ class zaver_order_number_reservation extends oxBase
    * @return string
    */
   public static function getReservationKey($orderNr) {
-    if (oxRegistry::getConfig()->getConfigParam('blSeparateNumbering')) {
-      return $orderNr . '-' . oxRegistry::getConfig()->getShopId();
+    if (Registry::getConfig()->getConfigParam('blSeparateNumbering')) {
+      return $orderNr . '-' . Registry::getConfig()->getShopId();
     }
 
     return $orderNr;

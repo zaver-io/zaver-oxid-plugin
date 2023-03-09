@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="ISO-8859-15"?>
 <OX>
-	<OXMENU id="NAVIGATION_ESHOPADMIN">
-		<MAINMENU id="ZAVER">
-			<SUBMENU id="ZAVER_CONFIG" cl="ZAVER_CONFIG"></SUBMENU>
-		</MAINMENU>
+    <OXMENU id="NAVIGATION_ESHOPADMIN">
+        <MAINMENU id="ZAVER">
+            <SUBMENU id="ZAVER_CONFIG" cl="zaverconfigcontroller"></SUBMENU>
+        </MAINMENU>
         <MAINMENU id="mxorders">
             <SUBMENU id="mxdisplayorders" cl="admin_order" list="order_list">
-                <TAB id="ZAVER_ORDER" cl="zaver_orderwg" />
+                <TAB id="ZAVER_ORDER" cl="zaverorderwgcontroller" />
             </SUBMENU>
         </MAINMENU>
-	</OXMENU>
+    </OXMENU>
 </OX>

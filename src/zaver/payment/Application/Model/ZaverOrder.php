@@ -1,9 +1,14 @@
 <?php
 
+namespace Zaver\Payment\Application\Model;
+
+use Zaver\Payment\Application\Model\ZaverOrderNumReservation;
+use OxidEsales\Eshop\Core\Registry;
+
 /**
- * Class zaver_oxorder
+ * Class ZaverOrder
  */
-class zaver_oxorder extends zaver_oxorder_parent
+class ZaverOrder extends ZaverOrder_parent
 {
 
   protected $_forceOrderStatusOk = false;
@@ -74,7 +79,7 @@ class zaver_oxorder extends zaver_oxorder_parent
    * @return oxBasket
    */
   protected function _getRecalculatedBasket() {
-    $oBasket = oxRegistry::getSession()->getBasket();
+    $oBasket = Registry::getSession()->getBasket();
     $oBasketArticles = $oBasket->getBasketArticles();
 
     if (count($oBasketArticles) > 0) {
@@ -97,7 +102,7 @@ class zaver_oxorder extends zaver_oxorder_parent
    */
   protected function _getUserFromOrder() {
     $oUser = NULL;
-    $oUser = oxRegistry::getSession()->getUser();
+    $oUser = Registry::getSession()->getUser();
     if ($oUser != NULL) {
       if ($oUser->isLoaded() == true) {
         return $oUser;
@@ -114,7 +119,7 @@ class zaver_oxorder extends zaver_oxorder_parent
    */
   protected function _setRecordNumber_($sMaxField, $aWhere = null, $iMaxTryCnt = 5) {
     /** @var zaver_order_number_reservation $orderNumberReservation */
-    $orderNumberReservation = oxNew('zaver_order_number_reservation');
+    $orderNumberReservation = oxNew(ZaverOrderNumReservation::class);
     do {
       // as long as a reservation exists for the current order number
       // create a new order number

@@ -1,12 +1,20 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller\Admin;
+
 use Zaver\SDK\Object\WidgetRequest;
 use Zaver\SDK\Object\WidgetResponse;
 use Zaver\SDK\Manage;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Application\Model\Order;
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\UtilsServer;
+use OxidEsales\Eshop\Application\Controller\Admin\AdminDetailsController;
 
 /**
  * Configure the zaver widget
  */
-class zaver_orderwg extends zaver_admindetails
+class ZaverOrderWgCtl extends AdminDetailsController
 {
   /** @var string|null */
   private $errorMessage = null;
@@ -27,25 +35,23 @@ class zaver_orderwg extends zaver_admindetails
   public function render() {
     parent::render();
 
-    $this->_oOrder = oxNew('oxorder');
-
-    $oConfig = $this->getConfig();
-
-    $sOxid = $oConfig->getRequestParameter("oxid");
+    $this->_oOrder = oxNew(Order::class);
+    $sOxid = Registry::getConfig()->getRequestParameter('oxid');
 
     if ($sOxid != "-1" && isset($sOxid)) {
       // load object
       $this->_oOrder->load($sOxid);
       $this->_aViewData["edit"] = $this->_oOrder;
     }
+    $oLang = Registry::getLang();
 
     if (!$this->isZaverOrder()) {
-      $this->_aViewData["sMessage"] = oxRegistry::getLang()->translateString("ZAVER_ONLY_FOR_ZAVER_PAYMENT");
+      $this->_aViewData["sMessage"] = $oLang->translateString("ZAVER_ONLY_FOR_ZAVER_PAYMENT");
     }
     else {
       try {
         $this->_aViewData["Widget"] = '';
-        $lang = strtoupper(oxRegistry::getLang()->getLanguageAbbr());
+        $lang = strtoupper($oLang->getLanguageAbbr());
         $oOrder = $this->_oOrder;
 
         $oWidget = WidgetRequest::create()
@@ -71,7 +77,7 @@ class zaver_orderwg extends zaver_admindetails
    * @return string The IP Address
    */
   protected function getRemoteAddress() {
-    $oUtilsServer = oxRegistry::get('oxUtilsServer');
+    $oUtilsServer = oxNew(UtilsServer::class);
     $sIpAddress = $oUtilsServer->getRemoteAddress();
 
     return $sIpAddress;

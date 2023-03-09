@@ -1,11 +1,20 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller\Admin;
+
 use Zaver\SDK\Object\PaymentMethodsRequest;
 use Zaver\SDK\Checkout;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Core\DatabaseProvider;
+use OxidEsales\Eshop\Core\Field;
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Application\Controller\Admin\ShopConfiguration;
+use OxidEsales\Eshop\Application\Model\Payment;
 
 /**
  * Configure the Zaver interface
  */
-class zaver_config extends Shop_Config
+class ZaverConfigCtl extends ShopConfiguration
 {
   /** @var string|null */
   private $errorMessage = null;
@@ -41,7 +50,7 @@ class zaver_config extends Shop_Config
    * @return void
    */
   public function save() {
-    $oxConfig = $this->getConfig();
+    $oxConfig = Registry::getConfig();
 
     if (empty($this->_parameters)) {
       $this->_parameters = $oxConfig->getRequestParameter(ZaverConfig::VAR_CONFIG);
@@ -69,37 +78,37 @@ class zaver_config extends Shop_Config
 
       if (count($methods) > 0) {
         $prefix = ZaverConfig::PLUGIN_PREFIX;
-        oxDb::getDb()->execute(sprintf("DELETE FROM `oxobject2payment` where `oxpaymentid` LIKE '%%%s%%'", $prefix));
-        oxDb::getDb()->execute(sprintf("DELETE FROM `oxpayments` where `oxid` LIKE '%%%s%%'", $prefix));
+        DatabaseProvider::getDb()->execute(sprintf("DELETE FROM `oxobject2payment` where `oxpaymentid` LIKE '%%%s%%'", $prefix));
+        DatabaseProvider::getDb()->execute(sprintf("DELETE FROM `oxpayments` where `oxid` LIKE '%%%s%%'", $prefix));
 
         $locales = $this->getLangList();
         $pluginCodeTxt = ZaverConfig::PLUGIN_CODE_TXT;
-        $oPayment = oxNew('oxPayment');
+        $oPayment = oxNew(Payment::class);
 
         foreach ($methods as $method) {
           $methodCode = $prefix . $method["paymentMethod"];
           $oPayment->load($methodCode);
           $oPayment->setEnableMultilang(false);
           $oPayment->setId($methodCode);
-          $oPayment->oxpayments__oxid = new oxField($methodCode, oxField::T_RAW);
+          $oPayment->oxpayments__oxid = new Field($methodCode, Field::T_RAW);
 
           $aLocalization = $method["localizations"];
 
           foreach ($locales as $locale => $lang) {
             $key = $locale . "-" . strtoupper($locale);
-            $oPayment->{'oxpayments__oxdesc' . $lang} = new oxField($pluginCodeTxt . $aLocalization[$key]["title"], oxField::T_RAW);
-            $oPayment->{'oxpayments__oxlongdesc' . $lang} = new oxField(strip_tags($aLocalization[$key]["description"]), oxField::T_RAW);
+            $oPayment->{'oxpayments__oxdesc' . $lang} = new Field($pluginCodeTxt . $aLocalization[$key]["title"], Field::T_RAW);
+            $oPayment->{'oxpayments__oxlongdesc' . $lang} = new Field(strip_tags($aLocalization[$key]["description"]), Field::T_RAW);
           }
 
-          $oPayment->oxpayments__oxactive = new oxField(1, oxField::T_RAW);
-          $oPayment->oxpayments__oxaddsum = new oxField(0, oxField::T_RAW);
-          $oPayment->oxpayments__oxaddsumtype = new oxField('abs', oxField::T_RAW);
-          $oPayment->oxpayments__oxaddsumrules = new oxField('15', oxField::T_RAW);
-          $oPayment->oxpayments__oxfromboni = new oxField('0', oxField::T_RAW);
-          $oPayment->oxpayments__oxtoamount = new oxField('1000000', oxField::T_RAW);
-          $oPayment->oxpayments__oxchecked = new oxField(0, oxField::T_RAW);
-          $oPayment->oxpayments__oxsort = new oxField('0', oxField::T_RAW);
-          $oPayment->oxpayments__oxtspaymentid = new oxField('', oxField::T_RAW);
+          $oPayment->oxpayments__oxactive = new Field(1, Field::T_RAW);
+          $oPayment->oxpayments__oxaddsum = new Field(0, Field::T_RAW);
+          $oPayment->oxpayments__oxaddsumtype = new Field('abs', Field::T_RAW);
+          $oPayment->oxpayments__oxaddsumrules = new Field('15', Field::T_RAW);
+          $oPayment->oxpayments__oxfromboni = new Field('0', Field::T_RAW);
+          $oPayment->oxpayments__oxtoamount = new Field('1000000', Field::T_RAW);
+          $oPayment->oxpayments__oxchecked = new Field(0, Field::T_RAW);
+          $oPayment->oxpayments__oxsort = new Field('0', Field::T_RAW);
+          $oPayment->oxpayments__oxtspaymentid = new Field('', Field::T_RAW);
           $oPayment->save();
 
           // Assign the payment to country DE
@@ -110,9 +119,9 @@ class zaver_config extends Shop_Config
           if ($countryId) {
             $oObject2Payment = oxNew('oxbase');
             $oObject2Payment->init('oxobject2payment');
-            $oObject2Payment->oxobject2payment__oxpaymentid = new oxField($sOxId);
-            $oObject2Payment->oxobject2payment__oxobjectid = new oxField($countryId);
-            $oObject2Payment->oxobject2payment__oxtype = new oxField("oxcountry");
+            $oObject2Payment->oxobject2payment__oxpaymentid = new Field($sOxId);
+            $oObject2Payment->oxobject2payment__oxobjectid = new Field($countryId);
+            $oObject2Payment->oxobject2payment__oxtype = new Field("oxcountry");
             $oObject2Payment->save();
           }
         }
@@ -132,7 +141,8 @@ class zaver_config extends Shop_Config
    */
   private function getLangList() {
     $result = [];
-    $aLang = oxRegistry::getLang()->getLanguageArray();
+    $obLang = Registry::getLang();
+    $aLang = $obLang->getLanguageArray();
 
     foreach ($aLang as $oLang) {
       $result[$oLang->abbr] = $oLang->id ? '_' . $oLang->id : '';

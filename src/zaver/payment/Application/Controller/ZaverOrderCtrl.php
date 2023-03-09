@@ -1,4 +1,7 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller;
+
 use Zaver\SDK\Checkout;
 use Zaver\SDK\Object\MerchantUrls;
 use Zaver\SDK\Object\PaymentCreationRequest;
@@ -7,11 +10,17 @@ use Zaver\SDK\Config\ItemType;
 use Zaver\SDK\Object\PayerData;
 use Zaver\SDK\Config\PaymentStatus;
 use Zaver\SDK\Object\Address;
+use Zaver\Payment\Classes\ZaverConfig;
+use Zaver\Payment\Application\Model\ZaverOrderNumReservation;
+use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\UtilsObject;
+use OxidEsales\Eshop\Core\Field;
+use OxidEsales\Eshop\Application\Model\Order;
 
 /**
- * Class zaver_order
+ * Class ZaverOrderCtrl
  */
-class zaver_order extends zaver_order_parent
+class ZaverOrderCtrl extends ZaverOrderCtrl_parent
 {
   /**
    * @param int $iSuccess
@@ -21,12 +30,12 @@ class zaver_order extends zaver_order_parent
   protected function _getNextStep($iSuccess) {
     //Get current language
     $sActualPayment = $this->getPayment()->oxpayments__oxid->value;
-    $oOrder = oxNew('oxorder');
-    $sess_challenge = oxRegistry::getSession()->getVariable("sess_challenge");
+    $oOrder = oxNew(Order::class);
+    $sess_challenge = Registry::getSession()->getVariable("sess_challenge");
 
     if ($oOrder->load($sess_challenge)) {
       if (is_numeric($iSuccess) && $iSuccess >= 1) {
-        if ($iSuccess === oxOrder::ORDER_STATE_ORDEREXISTS && !$oOrder->zaver__isPaymentDone()) {
+        if ($iSuccess === Order::ORDER_STATE_ORDEREXISTS && !$oOrder->zaver__isPaymentDone()) {
           list($oOrder, $iSuccess) = $this->zaver__recreateOrder($oOrder);
         }
         $oBasket = $this->getBasket();
@@ -38,7 +47,7 @@ class zaver_order extends zaver_order_parent
 
         $iOrderId = $oOrder->oxorder__oxid->value; //orderid (char 32)
 
-        $lang = oxRegistry::getLang()->getLanguageAbbr(); //lang
+        $lang = Registry::getLang()->getLanguageAbbr(); //lang
 
         //check supported languages.
         $supportedLangs = array(
@@ -64,16 +73,16 @@ class zaver_order extends zaver_order_parent
         }
 
         // generate transaction id to identify the transaction on notify and redirect
-        $transactionId = oxUtilsObject::getInstance()->generateUID();
+        $transactionId = UtilsObject::getInstance()->generateUID();
 
         $sStoken = $this->getSession()->getSessionChallengeToken();
         $sRtoken = $this->getSession()->getRemoteAccessToken(true);
         $urlRedirect = $this->getConfig()->getSslShopUrl() . 'index.php?cl=order&fnc=processZaverRedirect&pm='
-          . $this->getPayment()->getId() . '&sess_challenge=' . oxRegistry::getSession()->getVariable('sess_challenge')
+          . $this->getPayment()->getId() . '&sess_challenge=' . Registry::getSession()->getVariable('sess_challenge')
           . '&' . $this->getSession()->getName() . '=' . $this->getSession()->getId() . '&stoken=' . $sStoken
           . '&rtoken=' . $sRtoken;
         $urlNotify = $this->getConfig()->getSslShopUrl() . 'index.php?cl=order&fnc=processZaverNotify&pm='
-          . $this->getPayment()->getId() . '&sess_challenge=' . oxRegistry::getSession()->getVariable('sess_challenge')
+          . $this->getPayment()->getId() . '&sess_challenge=' . Registry::getSession()->getVariable('sess_challenge')
           . '&' . $this->getSession()->getName() . '=' . $this->getSession()->getId() . '&stoken=' . $sStoken
           . '&rtoken=' . $sRtoken;
 
@@ -85,8 +94,8 @@ class zaver_order extends zaver_order_parent
         // Check if is a zaver payment
         if (substr($this->getPayment()->getId(), 0, 3) === ZaverConfig::PLUGIN_PREFIX) {
           // change order status
-          $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_IN_PAYMENT);
-          $oOrder->oxorder__zaver__transaction_id = new oxField($transactionId);
+          $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_IN_PAYMENT);
+          $oOrder->oxorder__zaver__transaction_id = new Field($transactionId);
           $oOrder->setPayment($oBasket->getPaymentId());
           $oOrder->save();
 
@@ -188,7 +197,7 @@ class zaver_order extends zaver_order_parent
               $payer->setBillingAddress($billAdress);
             }
 
-            $paymentTitle = "Order #".$oOrder->oxorder__oxordernr->value;
+            $paymentTitle = "Order #" . $oOrder->oxorder__oxordernr->value;
 
             $request = PaymentCreationRequest::create()
               ->setMerchantPaymentReference($transactionId)
@@ -222,24 +231,24 @@ class zaver_order extends zaver_order_parent
 
               // Add the zaver payment id
               $oOrder->addFieldName('zaver__payment_id');
-              $oOrder->oxorder__zaver__payment_id = new oxField($paymentZvId, oxField::T_RAW);
+              $oOrder->oxorder__zaver__payment_id = new Field($paymentZvId, Field::T_RAW);
               $oOrder->save();
 
-              oxRegistry::getUtils()->redirect($strUrlRedirect, false);
+              Registry::getUtils()->redirect($strUrlRedirect, false);
             }
             else {
               // change order status
-              $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_ERROR);
+              $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
               $oOrder->save();
-              oxRegistry::getSession()->setVariable('_zaver_payment_error', '');
-              return parent::_getNextStep(oxOrder::ORDER_STATE_PAYMENTERROR);
+              Registry::getSession()->setVariable('_zaver_payment_error', '');
+              return parent::_getNextStep(Order::ORDER_STATE_PAYMENTERROR);
             }
           }
           catch (Exception $e) {
-            $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_ERROR);
+            $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
             $oOrder->save();
-            oxRegistry::getSession()->setVariable('_zaver_payment_error', $e->getMessage());
-            return parent::_getNextStep(oxOrder::ORDER_STATE_PAYMENTERROR);
+            Registry::getSession()->setVariable('_zaver_payment_error', $e->getMessage());
+            return parent::_getNextStep(Order::ORDER_STATE_PAYMENTERROR);
           }
         }
       }
@@ -260,12 +269,12 @@ class zaver_order extends zaver_order_parent
    *
    * @return array
    */
-  protected function zaver__recreateOrder(oxOrder $oOrder) {
+  protected function zaver__recreateOrder(Order $oOrder) {
     $oOrderNumber = $oOrder->oxorder__oxordernr->value;
 
     // create order number reservation
     /** @var zaver_order_number_reservation $oOrderNumberReservation */
-    $oOrderNumberReservation = oxNew('zaver_order_number_reservation');
+    $oOrderNumberReservation = oxNew(ZaverOrderNumReservation::class);
     $reservationKey = zaver_order_number_reservation::getReservationKey($oOrderNumber);
     if (!$oOrderNumberReservation->load($reservationKey)) {
       $oOrderNumberReservation->setId($reservationKey);
@@ -274,8 +283,8 @@ class zaver_order extends zaver_order_parent
 
     $oOrder->delete();
     /** @var oxorder $newOrder */
-    $newOrder = oxNew('oxorder');
-    $newOrder->oxorder__oxordernr = new oxField($oOrderNumber, oxField::T_RAW);
+    $newOrder = oxNew(Order::class);
+    $newOrder->oxorder__oxordernr = new Field($oOrderNumber, Field::T_RAW);
     $iSuccess = $newOrder->finalizeOrder($this->getBasket(), $this->getUser());
     $this->getUser()->onOrderExecute($this->getBasket(), $iSuccess);
 
@@ -300,7 +309,7 @@ class zaver_order extends zaver_order_parent
     $sess_challenge = $_GET['sess_challenge'];
 
     /** @var zaver__oxorder $oOrder */
-    $oOrder = oxNew('oxorder');
+    $oOrder = oxNew(Order::class);
     $oOrder->load($sess_challenge);
     $oOrder->addFieldName('zaver__payment_status');
 
@@ -329,10 +338,10 @@ class zaver_order extends zaver_order_parent
         }
         else {
           if ($strPaymentStatus == PaymentStatus::SETTLED) {
-            $oOrder->oxorder__oxremark = new oxField('The payment was SETTLED', oxField::T_RAW);
-            $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_OK);
-            $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
-            $oOrder->oxorder__oxpaid = new oxField(oxRegistry::get("oxUtilsDate")->formatDBDate(date("Y-m-d H:i:s"), true));
+            $oOrder->oxorder__oxremark = new Field('The payment was SETTLED', Field::T_RAW);
+            $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_OK);
+            $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
+            $oOrder->oxorder__oxpaid = new Field(Registry::get("oxUtilsDate")->formatDBDate(date("Y-m-d H:i:s"), true));
             $oOrder->save();
 
             /*$oRemark = oxNew( "oxremark" );
@@ -344,8 +353,8 @@ class zaver_order extends zaver_order_parent
             $oRemark->save();*/
           }
           elseif ($strPaymentStatus == PaymentStatus::CANCELLED) {
-            $oOrder->oxorder__oxremark = new oxField('The payment was CANCELLED', oxField::T_RAW);
-            $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
+            $oOrder->oxorder__oxremark = new Field('The payment was CANCELLED', Field::T_RAW);
+            $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
             $oOrder->save();
           }
           $bIsOrderOk = true;
@@ -356,9 +365,9 @@ class zaver_order extends zaver_order_parent
       }
       elseif ($strPaymentStatus != PaymentStatus::PENDING || $strOrderStatus == ZaverConfig::ORDER_ERROR) {
         // Payment failed
-        $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_ERROR);
-        $oOrder->oxorder__zaver__status = new oxField(0);
-        $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
+        $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
+        $oOrder->oxorder__zaver__status = new Field(0);
+        $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
         $oOrder->save();
         $oOrder->cancelOrder();
 
@@ -366,14 +375,14 @@ class zaver_order extends zaver_order_parent
       }
       else {
         // Payment success
-        $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_IN_PROCESS);
-        $oOrder->oxorder__zaver__status = new oxField(1);
-        $oOrder->oxorder__zaver__payment_status = new oxField($strPaymentStatus);
+        $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_IN_PROCESS);
+        $oOrder->oxorder__zaver__status = new Field(1);
+        $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
         //$oOrder->oxorder__oxpaid = new oxField(oxRegistry::get("oxUtilsDate")->formatDBDate(date("Y-m-d H:i:s"), true));
         $oOrder->save();
-        oxRegistry::getSession()->setVariable('zaver_disable_article_check', '1');
+        Registry::getSession()->setVariable('zaver_disable_article_check', '1');
         $oOrder->sendZaverOrderByEmail();
-        oxRegistry::getSession()->deleteVariable('zaver_disable_article_check');
+        Registry::getSession()->deleteVariable('zaver_disable_article_check');
         $bIsOrderOk = true;
       }
     }
@@ -400,7 +409,7 @@ class zaver_order extends zaver_order_parent
     $sess_challenge = $_GET['sess_challenge'];
 
     /** @var zaver__oxorder $oOrder */
-    $oOrder = oxNew('oxorder');
+    $oOrder = oxNew(Order::class);
     $oOrder->addFieldName('zaver__payment_id');
     $oOrder->addFieldName('zaver__payment_status');
     $oOrder->load($sess_challenge);
@@ -445,26 +454,26 @@ class zaver_order extends zaver_order_parent
       }
       elseif ($oOrder->oxorder__oxpaymenttype->value != $pm) {
         $strResult = "ERROR";
-        $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_NOTVALID_TXT");
+        $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_NOTVALID_TXT");
       }
       elseif ($zvStatusPm != PaymentStatus::PENDING) {
         //TRANSACTION FAILED
 
         // Is order set to delete on failure?
         if ($oOrder->isLoaded()) {
-          $oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_ERROR);
-          $oOrder->oxorder__zaver__status = new oxField(0);
+          $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
+          $oOrder->oxorder__zaver__status = new Field(0);
           $oOrder->save();
           $oOrder->cancelOrder();
         }
 
-        $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
+        $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
 
         if ($zvStatusPm == PaymentStatus::CREATED) {
-          $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_CREATED_TXT");
+          $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CREATED_TXT");
         }
         elseif ($zvStatusPm == PaymentStatus::ERROR) {
-          $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_ERROR_TXT");
+          $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_ERROR_TXT");
         }
 
         $strResult = "ERROR";
@@ -476,15 +485,15 @@ class zaver_order extends zaver_order_parent
       }
       switch ($strResult) {
         case "ERROR":
-          oxRegistry::getSession()->setVariable(
-            'sess_challenge', oxUtilsObject::getInstance()->generateUID()
+          Registry::getSession()->setVariable(
+            'sess_challenge', UtilsObject::getInstance()->generateUID()
           ); // <-- forces new order creation
-          oxRegistry::getSession()->setVariable('_zaver_payment_error', $sErrorMsg);
-          oxRegistry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
+          Registry::getSession()->setVariable('_zaver_payment_error', $sErrorMsg);
+          Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
           break;
 
         default:
-          oxRegistry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=thankyou');
+          Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=thankyou');
           break;
       }
     }
@@ -492,22 +501,22 @@ class zaver_order extends zaver_order_parent
       error_log("ERROR:" . $e->getMessage());
 
       if ($oOrder->oxorder__oxtransstatus == ZaverConfig::ORDER_IN_PROCESS) {
-        oxRegistry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=thankyou');
+        Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=thankyou');
       }
       else {
-        oxRegistry::getSession()->setVariable(
-          'sess_challenge', oxUtilsObject::getInstance()->generateUID()
+        Registry::getSession()->setVariable(
+          'sess_challenge', UtilsObject::getInstance()->generateUID()
         ); // <-- forces new order creation
 
         if ($oOrder->oxorder__zaver__payment_status == PaymentStatus::CANCELLED) {
-          $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
+          $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
         }
         else {
           $sErrorMsg = $e->getMessage();
         }
 
-        oxRegistry::getSession()->setVariable('_zaver_payment_error', $sErrorMsg);
-        oxRegistry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
+        Registry::getSession()->setVariable('_zaver_payment_error', $sErrorMsg);
+        Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
       }
     }
   }

@@ -14,4 +14,6 @@ $aLang = array(
   'HELP_SHOP_MODULE_ZV_HOSTURL' => 'Host URL Schlüssel',
   'SHOP_MODULE_ZV_APIKEY' => 'API-Key',
   'HELP_SHOP_MODULE_ZV_APIKEY' => 'API-Key Schlüssel',
+  'SHOP_MODULE_GROUP_ZAVER_GENERAL' => 'Zaver Oxid',
+  'SHOP_MODULE_ZaverOxid' => 'Bitte über den separaten Zaver-Menüpunkt konfigurieren'
 );

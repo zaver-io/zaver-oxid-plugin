@@ -4,7 +4,7 @@
   "type": "oxideshop-module",
   "keywords": ["oxid", "modules", "eShop"],
   "homepage": "https://www.zaver.io",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": [
     "OSL-3.0",
     "AFL-3.0"
@@ -16,11 +16,13 @@
   },
   "autoload": {
     "psr-4": {
-      "Zaver\\SDK\\": "./lib/src/"
+      "Zaver\\SDK\\": "./lib/src/",
+      "Zaver\\Payment\\": "./"
     }
   },
   "require": {
     "php": ">=7.4.0",
-    "zaver/sdk": "*"
-  }
+    "zaver/sdk": "dev-main"
+  },
+  "minimum-stability": "dev"
 }

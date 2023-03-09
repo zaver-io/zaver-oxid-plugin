@@ -1,10 +1,16 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller\Admin;
+
 use Zaver\SDK\Checkout;
 use Zaver\SDK\Object\PaymentCaptureRequest;
 use Zaver\SDK\Object\PaymentCaptureResponse;
 use Zaver\SDK\Config\PaymentStatus;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Application\Model\Order;
+use OxidEsales\Eshop\Core\Registry;
 
-class zaver_orderoverview extends zaver_orderoverview_parent
+class ZaverOrderOverview extends ZaverOrderOverview_parent
 {
   protected $_oOrder;
 
@@ -41,9 +47,8 @@ class zaver_orderoverview extends zaver_orderoverview_parent
    * @return bool
    */
   protected function captureZaverPayment() {
-    $this->_oOrder = oxNew("oxorder");
-    $oConfig = $this->getConfig();
-    $sOxid = $oConfig->getRequestParameter("oxid");
+    $this->_oOrder = oxNew(Order::class);
+    $sOxid = Registry::getConfig()->getRequestParameter('oxid');
 
     if ($sOxid != "-1" && isset($sOxid)) {
       // load object
@@ -68,7 +73,7 @@ class zaver_orderoverview extends zaver_orderoverview_parent
         }
       }
       catch (Exception $e) {
-        //oxRegistry::get('oxUtilsServer')->addErrorToDisplay($e);
+        //Registry::get('oxUtilsServer')->addErrorToDisplay($e);
         $_POST['oxid'] = -1;
         $this->resetContentCache();
         $this->init();
@@ -85,14 +90,12 @@ class zaver_orderoverview extends zaver_orderoverview_parent
    *
    * @return string
    */
-  public function render()
-  {
+  public function render() {
     $sTemplate = parent::render();
     $this->_aViewData['isZaverOrder'] = false;
 
-    $this->_oOrder = oxNew("oxorder");
-    $oConfig = $this->getConfig();
-    $sOxid = $oConfig->getRequestParameter("oxid");
+    $this->_oOrder = oxNew(Order::class);
+    $sOxid = Registry::getConfig()->getRequestParameter('oxid');
 
     if ($sOxid != "-1" && isset($sOxid)) {
       // load object

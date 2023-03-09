@@ -1,22 +1,29 @@
 <?php
+
+namespace Zaver\Payment\Application\Controller\Admin;
+
 use Zaver\SDK\Checkout;
 use Zaver\SDK\Object\PaymentUpdateRequest;
 use Zaver\SDK\Config\PaymentStatus;
+use Zaver\Payment\Classes\ZaverConfig;
+use OxidEsales\Eshop\Application\Model\Order;
+use OxidEsales\Eshop\Core\Exception\StandardException;
+use OxidEsales\Eshop\Core\Field;
+use OxidEsales\Eshop\Core\Registry;
 
-class zaver_orderlist extends zaver_orderlist_parent
+class ZaverOrderList extends ZaverOrderList_parent
 {
   protected $_oOrder;
 
   /**
    * Cancel the order
    */
-  public function storno()
-  {
+  public function storno() {
     $result = $this->cancelZaverOrder();
 
     if ($result) {
       parent::storno();
-      $this->_oOrder->oxorder__oxtransstatus = new oxField(ZaverConfig::ORDER_CANCELED);
+      $this->_oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_CANCELED);
       $this->_oOrder->save();
     }
   }
@@ -24,8 +31,7 @@ class zaver_orderlist extends zaver_orderlist_parent
   /**
    * Delete the order
    */
-  public function deleteEntry()
-  {
+  public function deleteEntry() {
     $result = $this->cancelZaverOrder();
 
     if ($result) {
@@ -54,11 +60,9 @@ class zaver_orderlist extends zaver_orderlist_parent
    *
    * @return bool
    */
-  protected function cancelZaverOrder()
-  {
-    $this->_oOrder = oxNew("oxorder");
-    $oConfig = $this->getConfig();
-    $sOxid = $oConfig->getRequestParameter("oxid");
+  protected function cancelZaverOrder() {
+    $this->_oOrder = oxNew(Order::class);
+    $sOxid = Registry::getConfig()->getRequestParameter('oxid');
 
     if ($sOxid != "-1" && isset($sOxid)) {
       // load object
@@ -79,8 +83,9 @@ class zaver_orderlist extends zaver_orderlist_parent
         if ($zvStatusPm != PaymentStatus::SETTLED && $zvStatusPm != PaymentStatus::CANCELLED) {
           $oPaymentUpRes = $oCheckout->updatePayment($paymentId, $oPaymentUpReq);
         }
-      } catch (Exception $e) {
-        //oxRegistry::get('oxUtilsServer')->addErrorToDisplay($e);
+      }
+      catch (Exception $e) {
+        //Registry::get(UtilsView::class)->addErrorToDisplay($e);
         $_POST['oxid'] = -1;
         $this->resetContentCache();
         $this->init();
