@@ -42,10 +42,17 @@ class zaver_config extends Shop_Config
    */
   public function save() {
     $oxConfig = $this->getConfig();
+
     if (empty($this->_parameters)) {
       $this->_parameters = $oxConfig->getRequestParameter(ZaverConfig::VAR_CONFIG);
     }
-    $oxConfig->saveShopConfVar('arr', ZaverConfig::VAR_CONFIG, $this->_parameters);
+
+    if (!empty($this->_parameters[ZaverConfig::KEY_CALLBACK_TOKEN]) &&
+      !empty($this->_parameters[ZaverConfig::KEY_API_KEY]) &&
+      !empty($this->_parameters[ZaverConfig::KEY_HOST_URL])
+    ) {
+      $oxConfig->saveShopConfVar('arr', ZaverConfig::VAR_CONFIG, $this->_parameters);
+    }
   }
 
   /**
@@ -151,6 +158,12 @@ class zaver_config extends Shop_Config
       return 3;
     }
     elseif ($request['fnc'] == 'save') {
+      if (empty($this->_parameters[ZaverConfig::KEY_CALLBACK_TOKEN]) ||
+        empty($this->_parameters[ZaverConfig::KEY_API_KEY]) ||
+        empty($this->_parameters[ZaverConfig::KEY_HOST_URL])
+      ) {
+        return 5;
+      }
       return 2;
     }
 

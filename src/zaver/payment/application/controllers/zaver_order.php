@@ -188,12 +188,14 @@ class zaver_order extends zaver_order_parent
               $payer->setBillingAddress($billAdress);
             }
 
+            $paymentTitle = "Order #".$oOrder->oxorder__oxordernr->value;
+
             $request = PaymentCreationRequest::create()
               ->setMerchantPaymentReference($transactionId)
               ->setAmount($dAmount)
               ->setCurrency(strtoupper($sCur))
               ->setMarket(strtoupper($lang))
-              ->setTitle($sActualPayment)
+              ->setTitle($paymentTitle)
               ->setMerchantUrls($urls)
               ->setPayerData($payer)
               ->addLineItem($shipping);

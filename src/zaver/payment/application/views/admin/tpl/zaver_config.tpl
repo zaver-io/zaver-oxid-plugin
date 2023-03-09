@@ -10,6 +10,8 @@
     <p style="color:green;">[{ oxmultilang ident="ZAVER_ADMIN_SUCCESS" }]</p>
     [{elseif $zaver_error eq 3}]
     <p style="color:green;">[{ oxmultilang ident="ZAVER_ADMIN_SUCCESS_SYNC" }]</p>
+    [{elseif $zaver_error eq 5}]
+    <p style="color:red;">[{ oxmultilang ident="ZAVER_ADMIN_ERROR_SAVE" }]</p>
     [{/if}]
 <hr/>
 <div id="zaver_admin" style="display:none">

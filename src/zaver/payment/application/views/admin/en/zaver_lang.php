@@ -35,4 +35,5 @@ $aLang = array(
   'ZAVER_AUTOMATIC_CAPTURE' => 'Automatic full capture on shipping',
   'ZAVER_AUTOMATIC_CAPTURE_DESCRIPTION' => 'For automatic capture on shipping',
   'ZAVER_PAYMENTID_TXT' => 'Zaver Payment-ID',
+  'ZAVER_ADMIN_ERROR_SAVE' => 'Please fill in all the mandatory fields.',
 );

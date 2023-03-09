@@ -60,7 +60,7 @@
 [{if $sMessage}]
     <div class="messagebox">[{$sMessage}]</div>
 [{else}]
-    <iframe src="[{$Widget}]" title="Zaver" width="100%" height="100%"></iframe>
+    <iframe src="[{$Widget}]" title="Zaver" width="100%" height="100%" frameborder="0"></iframe>
 [{/if}]
 
 [{include file="bottomitem.tpl"}]
