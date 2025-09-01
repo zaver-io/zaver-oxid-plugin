@@ -1,0 +1,7 @@
+[{if $sPaymentID|strstr:"zv_"}]
+    [{if $oView->getActiveCurrencyName() == "EUR" && $oView->isSettingsSet($sPaymentID) == true}]
+        [{$smarty.block.parent}]
+    [{/if}]    
+[{else}]
+    [{$smarty.block.parent}]
+[{/if}]
