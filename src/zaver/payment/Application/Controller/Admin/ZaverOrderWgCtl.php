@@ -45,9 +45,15 @@ class ZaverOrderWgCtl extends AdminDetailsController
     }
     $oLang = Registry::getLang();
 
+    $oOrder = $this->_oOrder;
     if (!$this->isZaverOrder()) {
       $this->_aViewData["sMessage"] = $oLang->translateString("ZAVER_ONLY_FOR_ZAVER_PAYMENT");
     }
+
+    elseif ($oOrder->oxorder__zaver__payment_id->value == "") {
+      $this->_aViewData["sMessage"] = $oLang->translateString("NO_ZAVER_PAYMENT_ID");
+    }
+
     else {
       try {
         $this->_aViewData["Widget"] = '';

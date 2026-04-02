@@ -17,7 +17,7 @@ class ZaverConfig
 
   const KEY_LOG_LEVEL = 'logLevel';
 
-  const KEY_IS_TEST_ENVIROMENT = true;
+  const KEY_IS_TEST_ENVIROMENT = 'istest';
 
   const KEY_HOST_URL = 'hosturl';
   const KEY_API_KEY = 'apikey';
@@ -29,7 +29,7 @@ class ZaverConfig
   const ORDER_NOT_FINISHED = 'NOT_FINISHED';
   const ORDER_IN_PAYMENT = 'IN_PAYMENT';
   const ORDER_IN_PROCESS = 'IN_PROCESS';
-  const ORDER_CANCELED = 'CANCELED';
+  const ORDER_CANCELLED = 'CANCELLED';
 
 
   /** @var oxConfig */
@@ -117,7 +117,7 @@ class ZaverConfig
   }
 
   public static function getIsTestEnviroment() {
-    return static::KEY_IS_TEST_ENVIROMENT;
+    return static::get(static::VAR_CONFIG, static::KEY_IS_TEST_ENVIROMENT);
   }
 
   public static function getLogFilename() {

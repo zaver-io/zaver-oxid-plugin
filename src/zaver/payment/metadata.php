@@ -20,7 +20,7 @@ $aModule = array(
     'en' => 'Module to integrate all payment methods from Zaver payments.<br>
              Please continue with the configuration of the payment methods for Zaver in the special “Zaver” menu item.”'
   ],
-  'version' => '1.0.2',
+  'version' => '1.0.5',
   'thumbnail' => 'out/img/Logo.png',
   'author' => 'Zaver payments',
   'email' => 'integration@zaver.se',

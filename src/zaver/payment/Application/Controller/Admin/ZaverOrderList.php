@@ -10,6 +10,7 @@ use OxidEsales\Eshop\Application\Model\Order;
 use OxidEsales\Eshop\Core\Exception\StandardException;
 use OxidEsales\Eshop\Core\Field;
 use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\Eshop\Core\UtilsView;
 
 class ZaverOrderList extends ZaverOrderList_parent
 {
@@ -23,8 +24,6 @@ class ZaverOrderList extends ZaverOrderList_parent
 
     if ($result) {
       parent::storno();
-      $this->_oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_CANCELED);
-      $this->_oOrder->save();
     }
   }
 
@@ -79,10 +78,27 @@ class ZaverOrderList extends ZaverOrderList_parent
         $oCheckout = new Checkout(ZaverConfig::getApiKey(), ZaverConfig::getIsTestEnviroment());
         $zvStatusPmRes = $oCheckout->getPaymentStatus($paymentId);
         $zvStatusPm = $zvStatusPmRes->getPaymentStatus();
+        $zvRefund = $zvStatusPmRes->getRefundedAmount();
+        $zvCapture = $zvStatusPmRes->getCapturedAmount();
+        $zvAmount = $zvStatusPmRes->getAmount();
 
-        if ($zvStatusPm != PaymentStatus::SETTLED && $zvStatusPm != PaymentStatus::CANCELLED) {
+        if ($zvCapture == 0) {
           $oPaymentUpRes = $oCheckout->updatePayment($paymentId, $oPaymentUpReq);
         }
+      
+
+      if ($zvCapture != $zvRefund)
+      {
+        $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_ERROR_TXT");
+
+        Registry::get(UtilsView::class)->addErrorToDisplay($sErrorMsg);
+        $_POST['oxid'] = -1;
+        $this->resetContentCache();
+        $this->init();
+       
+        return false;
+
+              }
       }
       catch (Exception $e) {
         //Registry::get(UtilsView::class)->addErrorToDisplay($e);
@@ -92,7 +108,6 @@ class ZaverOrderList extends ZaverOrderList_parent
         return false;
       }
     }
-
     return true;
   }
 }

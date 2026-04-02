@@ -105,6 +105,7 @@ class ZaverOrderOverview extends ZaverOrderOverview_parent
     if ($this->isZaverOrder()) {
       $this->_aViewData['isZaverOrder'] = true;
       $this->_aViewData['zaverPaymentId'] = $this->_oOrder->oxorder__zaver__payment_id->value;
+      $this->_aViewData['zaverStatus'] = $this->_oOrder->oxorder__zaver__payment_status->value;
     }
 
     return $sTemplate;

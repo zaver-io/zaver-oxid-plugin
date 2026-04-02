@@ -32,8 +32,11 @@ $aLang = array(
   'ZAVER_CALLBACK_TOKEN' => 'Callback Token',
   'ZAVER_CALLBACK_TOKEN_DESCRIPTION' => 'Enter zaver Callback Token',
   'ZAVER_ONLY_FOR_ZAVER_PAYMENT' => 'This tab is for Zaver orders only',
+  'NO_ZAVER_PAYMENT_ID' => 'No Zaver Payment ID found for this order',
   'ZAVER_AUTOMATIC_CAPTURE' => 'Automatic full capture on shipping',
   'ZAVER_AUTOMATIC_CAPTURE_DESCRIPTION' => 'For automatic capture on shipping',
   'ZAVER_PAYMENTID_TXT' => 'Zaver Payment-ID',
+  'ZAVER_PAYMENT_STATUS_TXT' => 'Zaver Status',
   'ZAVER_ADMIN_ERROR_SAVE' => 'Please fill in all the mandatory fields.',
+  'ZV_PAYMENT_ERROR_TXT' => 'Please do first the Refund for Zaver'
 );

@@ -69,6 +69,16 @@
                                 </dt>
                                 <div class="spacer"></div>
                             </dl>
+                                                        <dl>
+                                <dd class="cntExLft"></dd>
+                                <dt>
+                                    <input type="hidden" name="zaver_config[istest]" value="0" />
+                                    <input type="checkbox" class="editinput" name="zaver_config[istest]" value="1"
+                                           [{if $zaver_config.istest}]checked="checked"[{/if}] />&nbsp;
+                                    [{ oxmultilang ident="ZAVER_TEST_MODE_DESCRIPTION" }]<br />
+                                </dt>
+                                <div class="spacer"></div>
+                            </dl>
                             <div class="cntExLft">
                                 <input type="submit" class="zaver-config-btn" name="save" value="[{ oxmultilang ident="GENERAL_SAVE" }]" onclick="document.myedit.fnc.value='save'; document.myedit.submit();" style="margin:1em 3em 0;"/>
                             </div>

@@ -23,13 +23,14 @@ class ZaverOrder extends ZaverOrder_parent
    *
    * @return bool|int
    */
-  protected function _sendOrderByEmail($oUser = null, $oBasket = null, $oPayment = null) {
-    if ($this->zaver__isZaverOrder() && !$this->zaver__isPaymentDone()) {
-
-      return self::ORDER_STATE_OK;
-    }
-    return parent::_sendOrderByEmail($oUser, $oBasket, $oPayment);
-  }
+ /**  protected function _sendOrderByEmail($oUser, $oBasket, $oPayment) {
+ *  if ($this->zaver__isZaverOrder() && !$this->zaver__isPaymentDone()) {
+ *
+ *     return self::ORDER_STATE_OK;
+ *  }
+ *   return parent::_sendOrderByEmail($oUser, $oBasket, $oPayment);
+ * }
+ */
 
   protected function _setOrderStatus($sStatus) {
     if ($sStatus != 'OK' || !$this->zaver__isZaverOrder() || $this->_forceOrderStatusOk) {
@@ -44,7 +45,7 @@ class ZaverOrder extends ZaverOrder_parent
    * once order status = OK
    *
    */
-  public function sendZaverOrderByEmail() {
+  public function sendZaverOrderByEmail($oUser, $oBasket, $oPayment) {
 
     $this->_forceOrderStatusOk = true;
     //$this->_setOrderStatus('OK');
@@ -53,7 +54,7 @@ class ZaverOrder extends ZaverOrder_parent
     $this->_oUser = $this->_getUserFromOrder();
 
     $this->_oPayment = $this->getPaymentType();
-    $this->_sendOrderByEmail($this->_oUser, $this->_oBasket, $this->_oPayment);
+    $this->_sendOrderByEmail($oUser, $oBasket, $oPayment);
   }
 
   /**
@@ -126,7 +127,7 @@ class ZaverOrder extends ZaverOrder_parent
       parent::_setRecordNumber($sMaxField, $aWhere, $iMaxTryCnt);
 
       $reservationExists = $orderNumberReservation->load(
-        zaver_order_number_reservation::getReservationKey($this->oxorder__oxordernr->value)
+        ZaverOrderNumReservation::getReservationKey($this->oxorder__oxordernr->value)
       );
     } while ($reservationExists);
   }

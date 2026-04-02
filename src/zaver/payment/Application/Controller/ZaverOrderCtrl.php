@@ -16,6 +16,9 @@ use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\Eshop\Core\UtilsObject;
 use OxidEsales\Eshop\Core\Field;
 use OxidEsales\Eshop\Application\Model\Order;
+use OxidEsales\Eshop\Core\Price;
+use OxidEsales\Eshop\Application\Model\BasketItem;
+use OxidEsales\Eshop\Application\Model\Discount;
 
 /**
  * Class ZaverOrderCtrl
@@ -86,7 +89,6 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
           . '&' . $this->getSession()->getName() . '=' . $this->getSession()->getId() . '&stoken=' . $sStoken
           . '&rtoken=' . $sRtoken;
 
-
         $oUser = $this->getUser();
         $iUserId = $oUser->oxuser__oxid->value; //customer id (char 32)
         $iUserNr = $oUser->oxuser__oxcustnr->value;
@@ -140,6 +142,55 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
                 $aItems[] = $item;
               }
             }
+            $oDiscounts = is_null($oBasket->getDiscounts()) ? [] : $oBasket->getDiscounts();
+            
+            foreach ($oDiscounts AS $oDiscount) {
+
+              $iPrice = ($oDiscount->dDiscount * -1);
+
+              $sName = $oDiscount->sDiscount;
+              $sEAN = "";
+              $iQty = 1;
+              $itemType = ItemType::DISCOUNT;
+              $item = LineItem::create()
+              ->setName($sName)
+              ->setMerchantReference($sEAN)
+              ->setQuantity($iQty)
+              ->setUnitPrice($iPrice)
+              ->setTotalAmount($iQty * $iPrice)
+              ->setTaxRatePercent(0)
+              ->setItemType($itemType);
+              $aItems[] = $item;
+            }
+
+            foreach ($oBasket->getVouchers() AS $oVoucher) {
+
+              $iPrice = ($oVoucher->dVoucherdiscount * -1);
+              $sName = $oVoucher->sVoucherNr;
+              $sEAN = $oVoucher->sVoucherId;
+              $iQty = 1;
+              $zdate = '0000-00-00';
+
+                $oDb = \OxidEsales\Eshop\Core\DatabaseProvider::getMaster();
+                $sQ = "update oxvouchers set oxdateused = :oxdateused, oxorderid = :oxorderid where oxid = :oxid";
+                $oDb->execute($sQ, [
+                    ':oxdateused' => $zdate,
+                    ':oxorderid' => '',
+                    ':oxid' => $sEAN
+                ]);
+            
+
+              $itemType = ItemType::DISCOUNT;
+              $item = LineItem::create()
+              ->setName($sName)
+              ->setMerchantReference($sEAN)
+              ->setQuantity($iQty)
+              ->setUnitPrice($iPrice)
+              ->setTotalAmount($iQty * $iPrice)
+              ->setTaxRatePercent(0)
+              ->setItemType($itemType);
+              $aItems[] = $item;
+            }
 
             $shippingAmount = $oOrder->getOrderDeliveryPrice()->getBruttoPrice();
             $shippingName = $oOrder->getDelSet()->oxdeliveryset__oxtitle->value;
@@ -159,11 +210,13 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
               ->setSuccessUrl($urlRedirect)
               ->setCancelUrl($urlRedirect)
               ->setCallbackUrl($urlNotify);
-
+           
             $payer = PayerData::create()
-              ->setEmail($oOrder->oxorder__oxbillemail->value);
-
-            if (!empty($oOrder->oxorder__oxdellname->value)) {
+              ->setEmail($oOrder->oxorder__oxbillemail->value)
+              ->setGivenName($oOrder->oxorder__oxbillfname->value)
+              ->setFamilyName($oOrder->oxorder__oxbilllname->value);
+            
+            if ($oOrder->oxorder__oxdellname->value) {
               $shippAdrName = $oOrder->oxorder__oxdelfname->value . ' ' . $oOrder->oxorder__oxdellname->value;
               $oCountry = oxNew("oxcountry");
               $oCountry->load($oOrder->oxorder__oxdelcountryid->value);
@@ -175,6 +228,23 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
                 ->setStreetName($oOrder->oxorder__oxdelstreet->value)
                 ->setHouseNumber($oOrder->oxorder__oxdelstreetnr->value)
                 ->setCity($oOrder->oxorder__oxdelcity->value)
+                ->setCountry($shippCountryIso);
+
+              $payer->setShippingAddress($shippAdress);
+            }
+
+            if (!$oOrder->oxorder__oxdellname->value) {
+              $shippAdrName = $oOrder->oxorder__oxbillfname->value . ' ' . $oOrder->oxorder__oxbilllname->value;
+              $oCountry = oxNew("oxcountry");
+              $oCountry->load($oOrder->oxorder__oxbillcountryid->value);
+              $shippCountryIso = $oCountry->oxcountry__oxisoalpha2->value;
+
+              $shippAdress = Address::create()
+                ->setName($shippAdrName)
+                ->setPostalCode($oOrder->oxorder__oxbillzip->value)
+                ->setStreetName($oOrder->oxorder__oxbillstreet->value)
+                ->setHouseNumber($oOrder->oxorder__oxbillstreetnr->value)
+                ->setCity($oOrder->oxorder__oxbillcity->value)
                 ->setCountry($shippCountryIso);
 
               $payer->setShippingAddress($shippAdress);
@@ -196,7 +266,11 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
 
               $payer->setBillingAddress($billAdress);
             }
-
+            if ($billAdress != $shippAdress){
+            $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_ADRESS_TXT");
+            Registry::getSession()->setVariable('_zaver_payment_error', $sErrorMsg);
+            Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
+            }
             $paymentTitle = "Order #" . $oOrder->oxorder__oxordernr->value;
 
             $request = PaymentCreationRequest::create()
@@ -222,6 +296,7 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
               $paymentsData = $payment->getSpecificPaymentMethodData();
               $paymentSel = strtolower(substr($this->getPayment()->getId(), 3, strlen($this->getPayment()->getId())));
               $paymentZvId = $payment->getPaymentId();
+              $paymentZvSt = $payment->getPaymentStatus();
 
               foreach ($paymentsData as $oPayment) {
                 if ($paymentSel == strtolower($oPayment["paymentMethod"])) {
@@ -232,6 +307,8 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
               // Add the zaver payment id
               $oOrder->addFieldName('zaver__payment_id');
               $oOrder->oxorder__zaver__payment_id = new Field($paymentZvId, Field::T_RAW);
+              $oOrder->addFieldName('zaver__payment_status');
+              $oOrder->oxorder__zaver__payment_status = new Field($paymentZvSt, Field::T_RAW);
               $oOrder->save();
 
               Registry::getUtils()->redirect($strUrlRedirect, false);
@@ -275,8 +352,8 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
     // create order number reservation
     /** @var zaver_order_number_reservation $oOrderNumberReservation */
     $oOrderNumberReservation = oxNew(ZaverOrderNumReservation::class);
-    $reservationKey = zaver_order_number_reservation::getReservationKey($oOrderNumber);
-    if (!$oOrderNumberReservation->load($reservationKey)) {
+    $reservationKey = ZaverOrderNumReservation::getReservationKey($oOrderNumber);
+    if (!$reservationKey) {
       $oOrderNumberReservation->setId($reservationKey);
       $oOrderNumberReservation->save();
     }
@@ -289,9 +366,23 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
     $this->getUser()->onOrderExecute($this->getBasket(), $iSuccess);
 
     // delete order number reservation
-    $oOrderNumberReservation->delete();
+    //$oOrderNumberReservation->delete();
 
     return array($newOrder, $iSuccess);
+  }
+
+  public function formatAsInt($number)
+  {
+      return (int)Registry::getUtils()->fRound($number * 100);
+  }
+
+  /**
+   * @param $value
+   * @return float
+   */
+  protected function formatPrice($value)
+  {
+      return Registry::getUtils()->fRound($value);
   }
 
   /**
@@ -353,7 +444,6 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
             $oRemark->save();*/
           }
           elseif ($strPaymentStatus == PaymentStatus::CANCELLED) {
-            $oOrder->oxorder__oxremark = new Field('The payment was CANCELLED', Field::T_RAW);
             $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
             $oOrder->save();
           }
@@ -363,27 +453,50 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
       elseif ($oOrder->oxorder__oxpaymenttype->value != $pm) {
         $bIsOrderOk = false;
       }
-      elseif ($strPaymentStatus != PaymentStatus::PENDING || $strOrderStatus == ZaverConfig::ORDER_ERROR) {
+      elseif ($strOrderStatus == ZaverConfig::ORDER_ERROR) {
         // Payment failed
         $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
         $oOrder->oxorder__zaver__status = new Field(0);
         $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
         $oOrder->save();
-        $oOrder->cancelOrder();
+        //$oOrder->cancelOrder();
 
         $bIsOrderOk = true;
       }
-      else {
+      elseif ($strPaymentStatus == PaymentStatus::PENDING) {
         // Payment success
         $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_IN_PROCESS);
         $oOrder->oxorder__zaver__status = new Field(1);
         $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
         //$oOrder->oxorder__oxpaid = new oxField(oxRegistry::get("oxUtilsDate")->formatDBDate(date("Y-m-d H:i:s"), true));
         $oOrder->save();
+
+        $oUser = $this->getUser();
+        $oBasket = $this->getBasket();
+        $oPayment = $this->getPaymentType();
+        foreach ($oBasket->getVouchers() AS $oVoucher) {
+        
+        $sEAN = $oVoucher->sVoucherId;
+        $zdate = date("Y-m-d", \OxidEsales\Eshop\Core\Registry::getUtilsDate()->getTime());
+        $iOrderId = $oOrder->oxorder__oxid->value;
+        $oDb = \OxidEsales\Eshop\Core\DatabaseProvider::getMaster();
+        $sQ = "update oxvouchers set oxdateused = :oxdateused, oxorderid = :oxorderid where oxid = :oxid";
+        $oDb->execute($sQ, [
+            ':oxdateused' => $zdate,
+            ':oxorderid' => $iOrderId,
+            ':oxid' => $sEAN
+        ]);
+      }
         Registry::getSession()->setVariable('zaver_disable_article_check', '1');
-        $oOrder->sendZaverOrderByEmail();
+        $oOrder->sendZaverOrderByEmail($oUser, $oBasket, $oPayment);
         Registry::getSession()->deleteVariable('zaver_disable_article_check');
         $bIsOrderOk = true;
+      }
+      elseif ($strPaymentStatus == PaymentStatus::CANCELLED) {
+        $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_CANCELLED);
+        $oOrder->oxorder__zaver__status = new Field(0);
+        $oOrder->oxorder__zaver__payment_status = new Field($strPaymentStatus);
+        $oOrder->save(); 
       }
     }
     catch (Exception $e) {
@@ -434,13 +547,13 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
           $sErrorMsg = '';
 
           if ($zvStatusPm == PaymentStatus::CREATED) {
-            $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_CREATED_TXT");
+            $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CREATED_TXT");
           }
           elseif ($zvStatusPm == PaymentStatus::ERROR) {
-            $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_ERROR_TXT");
+            $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_ERROR_TXT");
           }
           elseif ($zvStatusPm == PaymentStatus::CANCELLED) {
-            $sErrorMsg = oxRegistry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
+            $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
           }
         }
         elseif ($oOrder->oxorder__oxtransstatus == ZaverConfig::ORDER_IN_PROCESS) {
@@ -460,12 +573,13 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
         //TRANSACTION FAILED
 
         // Is order set to delete on failure?
-        if ($oOrder->isLoaded()) {
-          $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
-          $oOrder->oxorder__zaver__status = new Field(0);
-          $oOrder->save();
-          $oOrder->cancelOrder();
-        }
+        //if ($oOrder->isLoaded()) {
+        //  $oOrder->oxorder__oxtransstatus = new Field(ZaverConfig::ORDER_ERROR);
+        //  $oOrder->oxorder__zaver__status = new Field(0);
+        //  $oOrder->oxorder__oxremark = new Field('Fehler', Field::T_RAW);
+        //  $oOrder->save();
+          //$oOrder->cancelOrder();
+        //}
 
         $sErrorMsg = Registry::getLang()->translateString("ZV_PAYMENT_CANCEL_TXT");
 
@@ -492,7 +606,22 @@ class ZaverOrderCtrl extends ZaverOrderCtrl_parent
           Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=payment');
           break;
 
-        default:
+        default: 
+
+        $oBasket = $this->getBasket();
+        foreach ($oBasket->getVouchers() AS $oVoucher) {
+        
+        $sEAN = $oVoucher->sVoucherId;
+        $zdate = date("Y-m-d", \OxidEsales\Eshop\Core\Registry::getUtilsDate()->getTime());
+        $iOrderId = $oOrder->oxorder__oxid->value;
+        $oDb = \OxidEsales\Eshop\Core\DatabaseProvider::getMaster();
+        $sQ = "update oxvouchers set oxdateused = :oxdateused, oxorderid = :oxorderid where oxid = :oxid";
+        $oDb->execute($sQ, [
+            ':oxdateused' => $zdate,
+            ':oxorderid' => $iOrderId,
+            ':oxid' => $sEAN
+        ]);
+      }
           Registry::getUtils()->redirect($this->getConfig()->getSslShopUrl() . 'index.php?cl=thankyou');
           break;
       }
